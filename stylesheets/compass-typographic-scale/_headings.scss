@@ -1,0 +1,62 @@
+
+@import 'compass-typographic-scale/global';
+
+
+
+// Set an individual element to a size ($level) on the header scale
+@mixin ts-scale($level) {
+  $target: ts-get-size($level, $ts-header-scale);
+  @include ts-size-type($target);
+}
+
+// ..also set whitespace according to $rhythm
+@mixin ts-scale-with-rhythm($level, $rhythm: $ts-rhythm) {
+  $target: ts-get-size($level, $ts-header-scale);
+  @include ts-size-type($target, $rhythm);
+}
+
+// ..alias for above
+@mixin ts-scale-with-spacing($level, $rhythm: $ts-rhythm) {
+  @include ts-scale-with-rhythm($level, $rhythm);
+}
+
+
+
+// These mixins set h1 -> h6 all at once
+
+// Set all header sizes, with double stranded classes
+@mixin ts-header-scale($rhythm: false) {
+  $ts-classtype: unquote(".");
+  @if $ts-use-silent-classes {
+    $ts-classtype: unquote("%");
+  }
+
+  @if $ts-double-stranded {
+
+    @for $i from 1 through 6 {
+      $name: nth($ts-double-stranded-classnames, $i);
+      h#{$i}, #{$ts-classtype}#{$name} {
+        @include ts-scale-with-rhythm($i, $rhythm);
+      }
+    }
+
+  } @else {
+  
+    @for $i from 1 through 6 {
+      h#{$i} {
+        @include ts-scale-with-rhythm($i, $rhythm);
+      }
+    }
+
+  }
+}
+
+// ..also set rhythm
+@mixin ts-header-scale-with-rhythm($rhythm: $ts-rhythm) {
+  @include ts-header-scale($rhythm);
+}
+
+// ..alias for above
+@mixin ts-header-scale-with-spacing($rhythm: $ts-rhythm) {
+  @include ts-header-scale($rhythm);
+}

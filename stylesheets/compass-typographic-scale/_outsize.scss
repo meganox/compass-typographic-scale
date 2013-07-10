@@ -1,0 +1,41 @@
+
+@import 'compass-typographic-scale/global';
+
+
+
+// Convenience mixin for arbitrary number of additional classes
+
+@mixin ts-outsize-scale($rhythm: false) {
+
+  @if not $ts-outsize-scale {
+    @warn 'Calling outsize scale mixins with $ts-outsize-scale set to false!';
+  }
+
+  @if $ts-outsize-scale {
+
+    $list: $ts-outsize-scale-classnames;
+
+    $ts-classtype: unquote(".");
+    @if $ts-outsize-use-silent-classes {
+      $ts-classtype: unquote("%");
+    }
+
+    @each $name in $list {
+      $i: index($list, $name);
+      $target: ts-get-size($i, $ts-outsize-scale);
+      #{$ts-classtype}#{$name} {
+          @include ts-size-type($target, $rhythm);
+      }
+    }
+  }
+}
+
+// ..also set rhythm
+@mixin ts-outsize-scale-with-rhythm($rhythm: $ts-rhythm) {
+  @include ts-outsize-scale($rhythm);
+}
+
+// ..alias for above
+@mixin ts-outsize-scale-with-spacing($rhythm: $ts-rhythm) {
+  @include ts-outsize-scale($rhythm);
+}

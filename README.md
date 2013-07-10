@@ -40,12 +40,9 @@ You can now import the plugin: `@import 'compass-typographic-scale';`
 
 which will also import vertical-rhythm.
 
-Set up base font-size / line-height on the html element using the Vertical
-Rhythm module:
+Initialise the plugin:
 
-`@include establish-baseline;`
-
-this is recommended even if you're not using vertical rhythm.
+`@include ts-establish-baseline;`.
 
 
 Variables
@@ -59,13 +56,16 @@ that's equivalent to 16px default font size
 - `$ts-double-stranded-classnames` – Class names to use
 - `$ts-use-silent-classes` – Whether to use sass pseudo-classes (for use with
 @extend)
-- `$ts-outsize-scale` – An alternate scale
+- `$ts-outsize-scale` – An alternate scale. Set to false to disable.
 - `$ts-outsize-scale-classnames` – Classnames for alternate scale
 - `$ts-outsize-use-silent-classes` – Whether to use sass pseudo-classes
 
 
 Mixins
 ------
+- `ts-establish-baseline` – Sets base font size/line height and resets
+vertical whitespace
+- `ts-reset-vertical-spacing` – Sets margin/padding top/bottom to 0
 - `ts-header-scale` – Set h1 - h6 according to the scale
 - `ts-header-scale-with-rhythm($rhythm)` – Or with leading/trailing whitespace
 using rhythm `$rhythm` is optional and defaults to `$ts-rhythm`
@@ -75,6 +75,7 @@ using rhythm `$rhythm` is optional and defaults to `$ts-rhythm`
 `$ts-header-scale` list
 - `ts-scale-with-rhythm($level, $rhythm)` – With whitespace using rhythm  
 - `ts-scale-with-spacing` – Alias for above
+
 
 The mixin `ts-outsize-scale` gives you an arbitrary scale set up with the
 `$ts-outsize-*` variables which you can use in your html or with @extend
@@ -89,3 +90,24 @@ Output: `h1, .h1, h2, .h2 { /* rules */ }`
 
 Note that the syntax is slighty different, it accepts a list of header levels
 whereas Compass' headings() expects a range.
+
+
+More Control Over Output
+------------------------
+By default, `ts-establish-baseline` calls Vertical Rhythm's `establish-baseline`
+and resets top and bottom margins and padding on the heading selectors and
+classes and the outsize class names. Then when you call one of the
+`-with-rhythm` mixins any output for margin and paddings which are zero are
+suppressed, to avoid bloat. If you set the variable `$ts-bloat: true`, zero
+margins and padding *are* output for the rhythm mixins and the margin and
+padding resets are not performed. If you want to supress both the reset and the
+output when margin or padding is zero, leave `$ts-bloat: false` and call 
+Vertical Rhythm's `establish-baseline` instead of `ts-establish-baseline`. Now
+if you don't call any of the rhythm mixins, no margins or padding will be output
+at all. If you do call a rhythm mixin, only margins and padding that are not
+zero are output.
+
+The word 'bloat' is used a little jokingly here, if you group your selectors so
+you're not calling a mixin over and over with the same parameters, or use
+@extends, and you are gzipping your CSS (both things you should always do), you
+can set `$ts-bloat: true` and still not worry about bloat.
