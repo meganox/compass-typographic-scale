@@ -9,7 +9,286 @@
 // License: MIT
 // -----------------------------------------------------------------------------
 
-@import 'compass-typographic-scale/global';
-@import 'compass-typographic-scale/headings';
-@import 'compass-typographic-scale/outsize';
 
+$base-font-size: 16px !default;
+$base-line-height: 24px !default;
+
+$ts-header-scale: 36 24 21 18 16 14 !default;
+$ts-rhythm: 0 1 1 0 !default;
+$ts-base-font-size-points-equiv: 11 !default;
+
+$ts-double-stranded: true !default;
+$ts-double-stranded-classnames: h1 h2 h3 h4 h5 h6 !default;
+// Or e.g.
+//$ts-double-stranded-classnames: alpha beta gamma delta epsilon zeta;
+$ts-use-silent-classes: false !default;
+
+// Set to false to disable any output
+$ts-outsize-scale: 72 60 48 9 !default;
+$ts-outsize-scale-classnames: giga mega kilo micro !default;
+$ts-outsize-use-silent-classes: $ts-use-silent-classes !default;
+
+$ts-bloat: false !default;
+
+
+
+@import 'compass/typography/vertical_rhythm';
+
+
+
+@if not unitless($ts-base-font-size-points-equiv) {
+  @warn '$ts-base-font-size-points-equiv should not have units'
+}
+
+@if length($ts-double-stranded-classnames) != 6 {
+  @warn '$ts-double-stranded-classnames must have six items!';
+}
+
+@if $ts-outsize-scale {
+  @if not length($ts-outsize-scale) == length($ts-outsize-scale-classnames) {
+    @warn 'Length of $ts-outsize-scale and $ts-outsize-scale-classnames must be the same!';
+  }
+}
+
+
+
+// Setup functions
+
+@mixin ts-reset-vertical-spacing {
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+
+@mixin ts-reset-whitespace {
+  @if not $ts-bloat {
+
+    %ts-reset-vertical-spacing {
+      @include ts-reset-vertical-spacing; 
+    }
+
+    #{ts-headings()} {
+      @extend %ts-reset-vertical-spacing;
+    }
+
+    @if $ts-outsize-scale {
+      $ts-classtype: unquote(".");
+      @if $ts-outsize-use-silent-classes {
+        $ts-classtype: unquote("%");
+      }
+
+      @each $name in $ts-outsize-scale-classnames {
+        #{$ts-classtype}#{$name} {
+          @extend %ts-reset-vertical-spacing;
+        }
+      }
+    }
+  } @else {
+    @warn 'Calling ts-reset-whitespace when $ts-bloat is set is redundant';
+  }
+}
+
+
+@mixin ts-establish-baseline {
+  @include establish-baseline($font-size: $base-font-size);
+  @if not $ts-bloat {
+    @include ts-reset-whitespace;
+  }
+}
+
+
+
+// Helper functions to do the scaling
+
+@function ts-point2pixel(
+  $pt,
+  $equiv: $ts-base-font-size-points-equiv,
+  $base: $base-font-size
+) {
+    @return $pt * ( $base / $equiv ) + 0px;
+}
+
+
+@function ts-get-size($level, $scale) {
+  @return ts-point2pixel(nth($scale, $level));
+}
+
+
+
+// Function to output double-stranded headings
+@function ts-headings($levels: 1 2 3 4 5 6, $double-stranded: $ts-double-stranded) {
+  $list: $ts-double-stranded-classnames;
+
+  $ts-classtype: unquote(".");
+  @if $ts-use-silent-classes {
+    $ts-classtype: unquote("%");
+  }
+
+  $out: unquote('');
+
+  @each $i in $levels {
+    $out: #{$out} h#{$i}#{unquote(',')};
+    @if $double-stranded {
+      $out: #{$out} #{$ts-classtype}#{nth($list, $i)}#{unquote(',')} ;
+    }
+  }
+  @return $out;
+}
+
+// ..alias for above
+@function ts-headers($levels: 1 2 3 4 5 6, $double-stranded: $ts-double-stranded) {
+  @return ts-headings($levels, $double-stranded);
+}
+
+
+
+// Interface to Vertical Rhythm module
+
+// Set rhythm, 0 values are ignored unless $ts-bloat is true
+@mixin ts-rhythm($size, $rhythm) {
+
+  $m-top: nth($rhythm, 1);
+  $p-top: nth($rhythm, 2);
+  $p-bot: nth($rhythm, 3);
+  $m-bot: nth($rhythm, 4);
+
+  @if $ts-bloat {
+
+    @include margin-leader($m-top, $size);
+    @include padding-leader($p-top, $size);
+    @include padding-trailer($p-bot, $size);
+    @include margin-trailer($m-bot, $size);
+
+  } @else {
+
+    @if $m-top > 0 {
+      @include margin-leader($m-top, $size);
+    }
+
+    @if $p-top > 0 {
+      @include padding-leader($p-top, $size);
+    }
+    
+    @if $p-bot > 0 {
+      @include padding-trailer($p-bot, $size);
+    }
+
+    @if $m-bot > 0 {
+      @include margin-trailer($m-bot, $size);
+    }
+
+  }
+}
+
+
+@mixin ts-size-type($size: $base-font-size, $rhythm: false) {
+  $lines: lines-for-font-size($size);
+  @include adjust-font-size-to($size, $lines);
+  @if $rhythm {
+    @include ts-rhythm($size, $rhythm);
+  }
+}
+
+
+
+// Public Mixins
+
+
+// Set an individual element to a size ($level) on the header scale
+@mixin ts-scale($level) {
+  $target: ts-get-size($level, $ts-header-scale);
+  @include ts-size-type($target);
+}
+
+// ..also set whitespace according to $rhythm
+@mixin ts-scale-with-rhythm($level, $rhythm: $ts-rhythm) {
+  $target: ts-get-size($level, $ts-header-scale);
+  @include ts-size-type($target, $rhythm);
+}
+
+// ..alias for above
+@mixin ts-scale-with-spacing($level, $rhythm: $ts-rhythm) {
+  @include ts-scale-with-rhythm($level, $rhythm);
+}
+
+
+
+// These mixins set h1 -> h6 all at once
+
+// Set all header sizes, with double stranded classes
+@mixin ts-header-scale($rhythm: false) {
+  $ts-classtype: unquote(".");
+  @if $ts-use-silent-classes {
+    $ts-classtype: unquote("%");
+  }
+
+  @if $ts-double-stranded {
+
+    @for $i from 1 through 6 {
+      $name: nth($ts-double-stranded-classnames, $i);
+      h#{$i}, #{$ts-classtype}#{$name} {
+        @include ts-scale-with-rhythm($i, $rhythm);
+      }
+    }
+
+  } @else {
+  
+    @for $i from 1 through 6 {
+      h#{$i} {
+        @include ts-scale-with-rhythm($i, $rhythm);
+      }
+    }
+
+  }
+}
+
+// ..also set rhythm
+@mixin ts-header-scale-with-rhythm($rhythm: $ts-rhythm) {
+  @include ts-header-scale($rhythm);
+}
+
+// ..alias for above
+@mixin ts-header-scale-with-spacing($rhythm: $ts-rhythm) {
+  @include ts-header-scale($rhythm);
+}
+
+
+
+// Mixin for arbitrary number of additional classes
+
+@mixin ts-outsize-scale($rhythm: false) {
+
+  @if not $ts-outsize-scale {
+    @warn 'Calling outsize scale mixins with $ts-outsize-scale set to false!';
+  }
+
+  @if $ts-outsize-scale {
+
+    $list: $ts-outsize-scale-classnames;
+
+    $ts-classtype: unquote(".");
+    @if $ts-outsize-use-silent-classes {
+      $ts-classtype: unquote("%");
+    }
+
+    @each $name in $list {
+      $i: index($list, $name);
+      $target: ts-get-size($i, $ts-outsize-scale);
+      #{$ts-classtype}#{$name} {
+          @include ts-size-type($target, $rhythm);
+      }
+    }
+  }
+}
+
+// ..also set rhythm
+@mixin ts-outsize-scale-with-rhythm($rhythm: $ts-rhythm) {
+  @include ts-outsize-scale($rhythm);
+}
+
+// ..alias for above
+@mixin ts-outsize-scale-with-spacing($rhythm: $ts-rhythm) {
+  @include ts-outsize-scale($rhythm);
+}
