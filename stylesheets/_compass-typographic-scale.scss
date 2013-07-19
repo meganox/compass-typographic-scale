@@ -1,3 +1,4 @@
+
 // -----------------------------------------------------------------------------
 // compass-typographic-scale
 //
@@ -21,15 +22,16 @@ $ts-double-stranded: true !default;
 $ts-double-stranded-classnames: h1 h2 h3 h4 h5 h6 !default;
 // Or e.g.
 //$ts-double-stranded-classnames: alpha beta gamma delta epsilon zeta;
-$ts-use-silent-classes: false !default;
+$ts-use-html-classes: true !default;
 
 // Set to false to disable any output
 $ts-outsize-scale: 72 60 48 9 !default;
 $ts-outsize-scale-classnames: giga mega kilo micro !default;
-$ts-outsize-use-silent-classes: $ts-use-silent-classes !default;
+$ts-outsize-use-html-classes: true !default;
 
-$ts-bloat: false !default;
-
+// Set to false to disable setting vertical margins and padding to zero
+// globally, instead they will be set only when calling a *-with-rhythm mixin
+$ts-reset-vertical-whitespace: true !default;
 
 
 @import 'compass/typography/vertical_rhythm';
@@ -63,39 +65,44 @@ $ts-bloat: false !default;
 
 
 @mixin ts-reset-whitespace {
-  @if not $ts-bloat {
+  %ts-reset-vertical-spacing {
+    @include ts-reset-vertical-spacing; 
+  }
 
-    %ts-reset-vertical-spacing {
-      @include ts-reset-vertical-spacing; 
-    }
+  @if $ts-reset-vertical-whitespace {
 
     #{ts-headings()} {
       @extend %ts-reset-vertical-spacing;
     }
 
-    @if $ts-outsize-scale {
-      $ts-classtype: unquote(".");
-      @if $ts-outsize-use-silent-classes {
-        $ts-classtype: unquote("%");
-      }
-
-      @each $name in $ts-outsize-scale-classnames {
-        #{$ts-classtype}#{$name} {
+    @if $ts-double-stranded {
+      @each $name in $ts-double-stranded-classnames {
+        %ts-#{$name} {
           @extend %ts-reset-vertical-spacing;
         }
       }
     }
-  } @else {
-    @warn 'Calling ts-reset-whitespace when $ts-bloat is set is redundant';
+
+    @each $name in $ts-outsize-scale-classnames {
+      %ts-#{$name} {
+        @extend %ts-reset-vertical-spacing;
+      }
+    }
+
+    @if $ts-outsize-scale and $ts-outsize-use-html-classes {
+      @each $name in $ts-outsize-scale-classnames {
+        .#{$name} {
+          @extend %ts-reset-vertical-spacing;
+        }
+      }
+    }
+
   }
 }
 
-
 @mixin ts-establish-baseline {
   @include establish-baseline($font-size: $base-font-size);
-  @if not $ts-bloat {
-    @include ts-reset-whitespace;
-  }
+  @include ts-reset-whitespace;
 }
 
 
@@ -116,24 +123,19 @@ $ts-bloat: false !default;
 }
 
 
-
 // Function to output double-stranded headings
 @function ts-headings($levels: 1 2 3 4 5 6, $double-stranded: $ts-double-stranded) {
   $list: $ts-double-stranded-classnames;
-
-  $ts-classtype: unquote(".");
-  @if $ts-use-silent-classes {
-    $ts-classtype: unquote("%");
-  }
 
   $out: unquote('');
 
   @each $i in $levels {
     $out: #{$out} h#{$i}#{unquote(',')};
-    @if $double-stranded {
-      $out: #{$out} #{$ts-classtype}#{nth($list, $i)}#{unquote(',')} ;
+    @if $double-stranded and $ts-use-html-classes {
+      $out: #{$out} unquote('.')#{nth($list, $i)}#{unquote(',')};
     }
   }
+
   @return $out;
 }
 
@@ -146,7 +148,8 @@ $ts-bloat: false !default;
 
 // Interface to Vertical Rhythm module
 
-// Set rhythm, 0 values are ignored unless $ts-bloat is true
+// Set rhythm; 0 values are ignored unless
+// $ts-reset-vertical-whitespace is false
 @mixin ts-rhythm($size, $rhythm) {
 
   $m-top: nth($rhythm, 1);
@@ -154,7 +157,7 @@ $ts-bloat: false !default;
   $p-bot: nth($rhythm, 3);
   $m-bot: nth($rhythm, 4);
 
-  @if $ts-bloat {
+  @if not $ts-reset-vertical-whitespace {
 
     @include margin-leader($m-top, $size);
     @include padding-leader($p-top, $size);
@@ -180,6 +183,7 @@ $ts-bloat: false !default;
     }
 
   }
+
 }
 
 
@@ -219,28 +223,23 @@ $ts-bloat: false !default;
 
 // Set all header sizes, with double stranded classes
 @mixin ts-header-scale($rhythm: false) {
-  $ts-classtype: unquote(".");
-  @if $ts-use-silent-classes {
-    $ts-classtype: unquote("%");
-  }
 
-  @if $ts-double-stranded {
+  @for $i from 1 through 6 {
+    $name: nth($ts-double-stranded-classnames, $i);
 
-    @for $i from 1 through 6 {
-      $name: nth($ts-double-stranded-classnames, $i);
-      h#{$i}, #{$ts-classtype}#{$name} {
-        @include ts-scale-with-rhythm($i, $rhythm);
-      }
+    %ts-#{$name} {
+      @include ts-scale-with-rhythm($i, $rhythm);
     }
 
-  } @else {
-  
-    @for $i from 1 through 6 {
-      h#{$i} {
-        @include ts-scale-with-rhythm($i, $rhythm);
-      }
+    h#{$i} {
+      @extend %ts-#{$name};
     }
 
+    @if $ts-double-stranded and $ts-use-html-classes {
+      .#{$name} {
+        @extend %ts-#{$name};
+      }
+    }
   }
 }
 
@@ -262,23 +261,25 @@ $ts-bloat: false !default;
 
   @if not $ts-outsize-scale {
     @warn 'Calling outsize scale mixins with $ts-outsize-scale set to false!';
-  }
 
-  @if $ts-outsize-scale {
+  } @else  {
 
     $list: $ts-outsize-scale-classnames;
-
-    $ts-classtype: unquote(".");
-    @if $ts-outsize-use-silent-classes {
-      $ts-classtype: unquote("%");
-    }
 
     @each $name in $list {
       $i: index($list, $name);
       $target: ts-get-size($i, $ts-outsize-scale);
-      #{$ts-classtype}#{$name} {
+
+      %ts-#{$name} {
           @include ts-size-type($target, $rhythm);
       }
+
+      @if $ts-outsize-use-html-classes {
+        .#{$name} {
+          @extend %ts-#{$name};
+        }
+      }
+
     }
   }
 }
@@ -292,3 +293,5 @@ $ts-bloat: false !default;
 @mixin ts-outsize-scale-with-spacing($rhythm: $ts-rhythm) {
   @include ts-outsize-scale($rhythm);
 }
+
+

@@ -42,7 +42,7 @@ which will also import vertical-rhythm.
 
 Initialise the plugin:
 
-`@include ts-establish-baseline;`.
+`@include ts-establish-baseline;`. This is mandatory.
 
 
 Variables
@@ -51,21 +51,23 @@ Variables
 - `$ts-rhythm` – Rhythm to pass to vertical-rhythm (margin-top padding-top
 padding-bottom margin-bottom)
 - `$ts-base-font-size-points-equiv` – Scale factor i.e. the point size in print
-that's equivalent to 16px default font size
+that's equivalent to 16px default browser font size
 - `$ts-double-stranded` – Whether to output classes as well as element selectors
 - `$ts-double-stranded-classnames` – Class names to use
-- `$ts-use-silent-classes` – Whether to use sass pseudo-classes (for use with
-@extend)
+- `$ts-use-html-classes` – Whether to output CSS classes. Sass placeholder
+(silent) classes (for use with @extend) are always output.
 - `$ts-outsize-scale` – An alternate scale. Set to false to disable.
 - `$ts-outsize-scale-classnames` – Classnames for alternate scale
-- `$ts-outsize-use-silent-classes` – Whether to use sass pseudo-classes
+- `$ts-outsize-use-html-classes` – Whether to use CSS classes. Defaults to same as `$ts-use-html-classes`
 
 
 Mixins
 ------
 - `ts-establish-baseline` – Sets base font size/line height and resets
-vertical whitespace
-- `ts-reset-vertical-spacing` – Sets margin/padding top/bottom to 0
+vertical whitespace if `$ts-reset-vertical-whitespace` is true (See below)
+- `ts-reset-vertical-spacing` – Sets margin/padding top/bottom to 0 on any element
+- `ts-reset-whitespace` – Resets vertical spacing to 0 on the heading elements
+and classes and the outsize classes. Called anyway if you call `ts-establish-baseline`
 - `ts-header-scale` – Set h1 - h6 according to the scale
 - `ts-header-scale-with-rhythm($rhythm)` – Or with leading/trailing whitespace
 using rhythm `$rhythm` is optional and defaults to `$ts-rhythm`
@@ -96,18 +98,10 @@ More Control Over Output
 ------------------------
 By default, `ts-establish-baseline` calls Vertical Rhythm's `establish-baseline`
 and resets top and bottom margins and padding on the heading selectors and
-classes and the outsize class names. Then when you call one of the
-`-with-rhythm` mixins any output for margin and paddings which are zero are
-suppressed, to avoid bloat. If you set the variable `$ts-bloat: true`, zero
-margins and padding *are* output for the rhythm mixins and the margin and
-padding resets are not performed. If you want to supress both the reset and the
-output when margin or padding is zero, leave `$ts-bloat: false` and call 
-Vertical Rhythm's `establish-baseline` instead of `ts-establish-baseline`. Now
-if you don't call any of the rhythm mixins, no margins or padding will be output
-at all. If you do call a rhythm mixin, only margins and padding that are not
-zero are output.
-
-The word 'bloat' is used a little jokingly here, if you group your selectors so
-you're not calling a mixin over and over with the same parameters, or use
-@extends, and you are gzipping your CSS (both things you should always do), you
-can set `$ts-bloat: true` and still not worry about bloat.
+classes and the outsize class names. Then when you call one of the `-with-rhythm`
+mixins any output for margin and paddings which are zero are suppressed, to avoid
+bloat. If you set the variable `$ts-reset-vertical-whitespace: false`,
+zero margins and padding *are* output for the rhythm mixins and the margin and
+padding resets are not performed. If you don't want the plugin to set margins
+and padding at all, set `$ts-reset-vertical-whitespace: false` and don't call
+any of the rhythm mixins; no margins or padding will be output at all.
